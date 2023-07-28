@@ -8,14 +8,21 @@ export interface todoObject {
 
 class ToDo {
     public _noteList: todoObject[]
+    public _key: string
     public container: HTMLElement | null
     public form: HTMLElement
     public input: HTMLInputElement
     public btn: HTMLElement
 
-    constructor(container: HTMLElement | null, list: todoObject[] = []) {
+    constructor(container: HTMLElement | null, list: todoObject[] = [], key: string = 'tasks') {
         this.container = container || document.createElement('div')
-        this._noteList = list
+        this._key = key
+
+        if (list.length) {
+            this._noteList = list
+        } else {
+            this._noteList = this.getFromLocalStorage(this.key)
+        }
 
         this.form = document.createElement('form')
         this.input = document.createElement('input')
@@ -33,6 +40,14 @@ class ToDo {
         this.form.append(this.input, this.btn)
         this.container.append(this.form)
 
+        this.input.addEventListener('input', () => {
+            if (this.input.value) {
+                this.btn.removeAttribute('disabled')
+            } else {
+                this.btn.setAttribute('disabled', 'true')
+            }
+        })
+
         this.form.addEventListener('submit', event => {
             event.preventDefault()
 
@@ -45,8 +60,15 @@ class ToDo {
                 return false
             } else {
                 this.addTask(Date.now(), this.input.value, false)
+
+                this.input.value = ''
+                this.btn.setAttribute('disabled', 'true')
+
+                localStorage.setItem(this.key, JSON.stringify(this.noteList))
             }
         })
+
+        new NoteList(this)
     }
 
     addTask(id: number, value: string, done: boolean): NoteList {
@@ -67,8 +89,24 @@ class ToDo {
         return true
     }
 
+    getFromLocalStorage(key: string): todoObject[] {
+        return JSON.parse(localStorage.getItem(key)!)
+    }
+
+    set noteList(value: todoObject[]) {
+        this._noteList = value
+    }
+
     get noteList() : todoObject[] {
         return this._noteList
+    }
+
+    set key(value: string) {
+        this._key = value
+    }
+
+    get key(): string {
+        return this._key
     }
 }
 
